@@ -1,0 +1,250 @@
+<!DOCTYPE html><html lang="en"><head><script src="../static/assets/global/plugins/jquery-1.11.0.min.js" type="text/javascript"></script>
+<link href="../static/assets/global/plugins/bootstrap/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+<link href="../static/assets/global/css/components.css" rel="stylesheet" type="text/css">
+<link href="../static/assets/admin/pages/css/login.css" rel="stylesheet" type="text/css">
+<script type="text/javascript" src="./getHost.js"></script>
+
+    <meta charset="UTF-8">
+    <title>创建商品</title>
+</head>
+<body class="login">
+<div class="content" id="item_deteil">
+     <h3 class="form-title">商品详情</h3>
+
+<!--     秒杀提示-->
+     <div class="form-group" id="promoStartDateContainer" style="">
+         <label class="control-label" style="color: red" id="PromoStatus">秒杀活动正在进行中------</label>
+     </div>
+
+     <div class="form-group">
+         <label class="control-label">商品名</label>
+         <div>
+             <label class="control-label" id="title">iphone12 pro</label></div>
+     </div>
+
+     <div class="form-group">
+         <label class="control-label">商品描述</label>
+         <div>
+             <label class="control-label" id="description">8+128G</label></div>
+     </div>
+     <div class="form-group" id="priceLabel" style="display: none;">
+         <label class="control-label">价格</label>
+         <div>
+             <label class="control-label" id="price">5630</label></div>
+     </div>
+     <div class="form-group" id="promoPriceContainer" style="">
+         <label class="control-label" style="color: red">秒杀价格</label>
+         <div>
+             <label style="color: red" class="control-label" id="promoPrice">5000</label></div>
+     </div>
+
+
+     <div class="form-group">
+         <label class="control-label">图片</label>
+         <div>
+              <img style="width: 300px;height: auto" id="imgurl" src="https://store.storeimages.cdn-apple.com/8756/as-images.apple.com/is/iphone-12-pro-family-hero?wid=470&amp;hei=556&amp;fmt=jpeg&amp;qlt=95&amp;.v=1604021663000">
+         </div>
+     </div>
+     <div class="form-group">
+         <label class="control-label">库存</label>
+         <div>
+             <label class="control-label" id="stock">87</label></div>
+     </div>
+
+     <div class="form-group">
+         <label class="control-label">销量</label>
+         <div>
+             <label class="control-label" id="sales">30</label></div>
+     </div>
+
+     <div class="form-actions">
+         <button class="btn blue" id="createorder" type="submit">
+             下单
+         </button>
+     </div>
+
+
+ </div>
+ <!-- 隐藏域 -->
+<input type="hidden" id="isInit" value="1">
+
+<script>
+  
+    function getParam(paramName) {
+        paramValue = "", isFound = !1;
+        if (this.location.search.indexOf("?") == 0 && this.location.search.indexOf("=") > 1) {
+            arrSource = unescape(this.location.search).substring(1, this.location.search.length).split("&"), i = 0;
+            while (i < arrSource.length && !isFound) arrSource[i].indexOf("=") > 0 && arrSource[i].split("=")[0].toLowerCase() == paramName.toLowerCase() && (paramValue = arrSource[i].split("=")[1], isFound = !0), i++
+        }
+        return paramValue == "" && (paramValue = null), paramValue
+    }
+
+    var g_itemVO ={};
+    var AppPath = "http://"+g_host
+      // 获取状态
+    function hasInit(){
+        var  isInit = $("#isInit").val();
+        return isInit 
+    }
+     // 设置状态
+     function setHasInit(){
+        $("#isInit").val("1");
+    }
+    function initView(){
+        var isInit = hasInit();
+        if(isInit == "1"){
+            // 状态为“1” 就直接返回不执行了
+            return;
+        }
+          //获取商品详情
+            $.ajax({
+                type:"GET",
+                url:AppPath+"/getItem",
+                data:{
+                    "id":getParam("id")
+                },
+                xhrFields:{withCredentials:true},
+                 crossDomain:true,
+                success:function(data){
+                    if(data.status == "success"){
+                        g_itemVO = data.data;
+                        reloadDom()
+                        //获取定时器
+                        //没一秒钟刷新一次  单位是毫秒
+                        setInterval(reloadDom,1000)
+                        setHasInit();
+                    }else{
+                        alert("获取失败，原因为"+data.data.Msg);
+                    }
+                },
+                error:function(data){
+                    alert("获取失败，原因为"+data.responseText);
+                }
+            });
+    }
+
+
+
+    jQuery(document).ready(function(){
+
+        initView();
+
+
+        //下单
+        $(document).on("click","#createorder",function(){
+            var token_UUID =  window.localStorage["token_UUID"]
+            if(token_UUID == null){
+                alert("用户未登录不能下单")
+                window.location.href = "/login.html"
+                return false;
+            }
+            $.ajax({
+                type:"POST",
+                url:AppPath+"/createorder?token_UUID="+token_UUID,
+                data:{
+                    "itemId":g_itemVO.id,
+                    "amount":1,
+                    "promoId":g_itemVO.promoId,
+
+                },
+                xhrFields:{withCredentials:true},
+                success:function(data){
+                    if(data.status == "success"){
+                        alert("下单成功");
+                        //下单成功重新加载商品详情页 (刷新)，
+                        window.location.reload();
+                    }else{
+                        alert("下单失败,,原因为"+data.data.Msg);
+                        if(data.data.errCode == 10003){
+                            window.location.href="login.html";
+                        }
+                    }
+                },
+                error:function(data){
+                    alert("下单失败，原因为"+data.responseText);
+                }
+            });
+
+        });
+
+
+
+
+            return false;
+        });
+
+
+    function reloadDom() {
+        $("#title").text(g_itemVO.title)
+        $("#description").text(g_itemVO.description)
+        $("#price").text(g_itemVO.price)
+        $("#imgurl").attr("src",g_itemVO.imgurl)
+        $("#stock").text(g_itemVO.stock)
+        $("#sales").text(g_itemVO.sales)
+
+
+        if(g_itemVO.promoStatus == 1){
+            //秒杀活动未开始
+            // $("#PromoStatus").text("秒杀活动开始时间:"+g_itemVO.startDate)
+            //后台传来的时间进行一个转化
+
+            var startTime = g_itemVO.startDate.replace(new RegExp("-","gm"),"/");
+            startTime = (new Date(startTime)).getTime()
+           //获取当前时间
+            var nowTime = Date.parse(new Date());
+            var  date = (startTime-nowTime)/1000 //单位是毫秒
+
+            if(date <=0){
+                // 活动开时了
+                g_itemVO.promoStatus = 2
+                reloadDom();
+            }
+            $("#promoStartDateContainer").show()
+            $("#promoPriceContainer").show()
+            $("#PromoStatus").text("秒杀活动开始倒计时:"+formatSeconds(date))
+            $("#promoPrice").text(g_itemVO.promPrice)
+            $("#createorder").attr("disabled",true)
+        }else if(g_itemVO.promoStatus == 2){
+            //秒杀活动进行中
+            $("#promoStartDateContainer").show()
+            $("#promoPriceContainer").show()
+            $("#PromoStatus").text("秒杀活动正在进行中------")
+            $("#promoPrice").text(g_itemVO.promPrice)
+            $("#createorder").attr("disabled",false)
+            $("#priceLabel").hide();
+
+        }
+
+
+
+    }
+    //将秒数换成时分秒格式
+    function formatSeconds(value) {
+        var theTime = parseInt(value);// 秒
+        var theTime1 = 0;// 分
+        var theTime2 = 0;// 小时
+        if(theTime > 60) {
+            theTime1 = parseInt(theTime/60);
+            theTime = parseInt(theTime%60);
+            if(theTime1 > 60) {
+                theTime2 = parseInt(theTime1/60);
+                theTime1 = parseInt(theTime1%60);
+            }
+        }
+        var result = ""+parseInt(theTime);
+        if(theTime1 > 0) {
+            result = parseInt(theTime1)+":"+result;
+        }
+        if(theTime2 > 0) {
+            result = ""+parseInt(theTime2)+":"+result;
+        }
+        return result;
+    }
+
+
+
+
+
+
+</script>
+</body></html>

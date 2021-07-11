@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<script src="../static/assets/global/plugins/jquery-1.11.0.min.js" type="text/javascript"></script>
+<link href="../static/assets/global/plugins/bootstrap/css/bootstrap.min.css" rel="stylesheet" type="text/css"/>
+<link href="../static/assets/global/css/components.css" rel="stylesheet" type="text/css"/>
+<link href="../static/assets/admin/pages/css/login.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="./getHost.js"></script>
+<head>
+    <meta charset="UTF-8" >
+    <title>商品</title>
+</head>
+<body>
+ <div class="content">
+     <h3 class="form-title">商品列表浏览</h3>
+     <div class="table-responsive">
+         <table class="table">
+             <thead>
+                <tr>
+                    <th>商品名</th>
+                    <th>商品图片</th>
+                    <th>商品描述</th>
+                    <th>商品价格</th>
+                    <th>商品库存</th>
+                    <th>销量</th>
+                </tr>
+             </thead>
+             <tbody id="tbody">
+
+             </tbody>
+
+
+
+
+         </table>
+
+
+
+     </div>
+
+
+ </div>
+
+
+</body>
+<script>
+
+    jQuery(document).ready(function(){
+        //定义全局商品列表
+
+        var AppPath = "http://"+g_host
+            $.ajax({
+                type:"GET",
+                url:AppPath+"/list",
+                xhrFields:{withCredentials:true},
+                success:function(data){
+                    if(data.status == "success"){
+                        var  g_itemList = []
+                        g_itemList  = data.data;
+                        reloadDom(g_itemList);
+
+                    }else{
+                        alert("获取失败，原因为"+data.data.Msg);
+                    }
+                },
+                error:function(data){
+                    alert("获取失败，原因为"+data.responseText);
+                }
+            });
+            return false;
+        });
+
+    function reloadDom(g_itemList) {
+
+        for(var i=0;i<g_itemList.length;i++){
+            var item = g_itemList[i];
+            var td = "<td>"+item.title+"</td>"+ "<td><img style='width: 100px;height: auto' src='"+item.imgurl +"'/></td>"+
+                "<td>"+item.description+"</td>"+ "<td>"+item.price+"</td>"+ "<td>"+item.stock+"</td>"
+            +"<td>"+item.sales+"</td>"
+            var tr = $("<tr></tr>").attr("id","itemDetail"+item.id).attr("item_id",item.id).append(td);
+            $("tbody").append(tr)
+
+            $("#itemDetail"+item.id).on("click",function (e) {
+               window.location.href = "getItem.html?id="+$(this).attr("item_id");
+            })
+        }
+
+
+
+
+    }
+
+</script>
+</html>
